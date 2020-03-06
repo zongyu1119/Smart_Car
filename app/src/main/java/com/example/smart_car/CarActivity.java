@@ -2,6 +2,7 @@ package com.example.smart_car;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -359,10 +360,14 @@ public class CarActivity extends AppCompatActivity {
                             handler.sendMessage(message);
                         }
                     }
-                    Message message = handler.obtainMessage();
-                    message.what = 102;//网络状态
-                    message.obj = "已经连接";
-                    handler.sendMessage(message);
+                    if(socket.isClosed()){
+                        tcp_Client_INI();
+                    }else {
+                        Message message = handler.obtainMessage();
+                         message.what = 102;//网络状态
+                          message.obj = "已经连接";
+                          handler.sendMessage(message);
+                    }
                 }
             }.start();
 
@@ -372,6 +377,7 @@ public class CarActivity extends AppCompatActivity {
             car_tcp.setText("初始化失败:" + e.getMessage());
         }
     }
+
 
     //接收TCP信息
     protected void receive_tcp() {
@@ -407,43 +413,51 @@ public class CarActivity extends AppCompatActivity {
 
     //收到的消息代码转化为消息实时显示
     protected void car_status(String tcp_redata) {
-        String msg = "";
-        switch (tcp_redata) {
-            case "CS":
-                msg = "停止";
-                break;
-            case "CL":
-                msg = "左转";
-                break;
-            case "CR":
-                msg = "右转";
-                break;
-            case "CD":
-                msg = "后退";
-                break;
-            case "CU":
-                msg = "前进";
-                break;
-            case "LU":{
-                Message message = handler.obtainMessage();
-                message.what = 103;//灯光状态
-                message.obj = "LU";
-                handler.sendMessage(message);
-            }
-                break;
-            case "LS": {
-                Message message = handler.obtainMessage();
-                message.what = 103;//灯光状态
-                message.obj = "LS";
-                handler.sendMessage(message);
-            }
-                break;
-        }
-        if (msg != "") {
+        String tcp_s1=tcp_redata.substring(0,1);
+        if(tcp_s1.equals("S")){
             Message message = handler.obtainMessage();
-            message.what = 101;//小车行驶状态
-            message.obj = msg;
+            message.what = 104;//小车速度
+            message.obj = tcp_redata.substring(1,2);
             handler.sendMessage(message);
+        }else {
+            String msg = "";
+            switch (tcp_redata) {
+                case "CS":
+                    msg = "停止";
+                    break;
+                case "CL":
+                    msg = "左转";
+                    break;
+                case "CR":
+                    msg = "右转";
+                    break;
+                case "CD":
+                    msg = "后退";
+                    break;
+                case "CU":
+                    msg = "前进";
+                    break;
+                case "LU": {
+                    Message message = handler.obtainMessage();
+                    message.what = 103;//灯光状态
+                    message.obj = "LU";
+                    handler.sendMessage(message);
+                }
+                break;
+                case "LS": {
+                    Message message = handler.obtainMessage();
+                    message.what = 103;//灯光状态
+                    message.obj = "LS";
+                    handler.sendMessage(message);
+                }
+                break;
+            }
+            if (msg != "") {
+                Message message = handler.obtainMessage();
+                message.what = 101;//小车行驶状态
+                message.obj = msg;
+                handler.sendMessage(message);
+            }
         }
     }
 
@@ -473,6 +487,9 @@ public class CarActivity extends AppCompatActivity {
                     light_status=false;
                 }
 
+            }else if(msg.what==104){//小车速度
+                TextView tv = (TextView) findViewById(R.id.car_speed);//小车速度
+                tv.setText(msg.obj.toString());
             }
         }
     };
